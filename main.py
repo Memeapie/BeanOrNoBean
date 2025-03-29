@@ -140,13 +140,14 @@ class ParticleEmitter:
         self.particles = particle_copy
 
 class Button:
-    def __init__(self, x, y, width, height, button_text='Button', onclick_function=None):
+    def __init__(self, x, y, width, height, text='Button', onclick_function=None):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
         self.onclickFunction = onclick_function
         self.pressed = False
+        self.text = text
 
         self.fillColors = {
             'normal': '#b90e0a',
@@ -156,27 +157,28 @@ class Button:
 
         self.buttonSurface = p.Surface((self.width, self.height))
         self.buttonRect = p.Rect(self.x, self.y, self.width, self.height)
-        self.buttonSurf = font.render(button_text, True, (20, 20, 20))
 
         _OBJECTS.append(self)
 
     def process(self):
         mouse_pos = p.mouse.get_pos()
-        self.buttonSurface.fill(self.fillColors['normal'])
+        colour = self.fillColors['normal']
         if self.buttonRect.collidepoint(mouse_pos):
-            self.buttonSurface.fill(self.fillColors['hover'])
+            colour = self.fillColors['hover']
             if p.mouse.get_pressed(num_buttons=3)[0]:
-                self.buttonSurface.fill(self.fillColors['pressed'])
+                colour = self.fillColors['pressed']
                 if not self.pressed:
                     self.onclickFunction()
                     self.pressed = True
 
         if (_GAME_STATE == 'HOLD') or _BEAN_OR_NO_BEAN:
-            self.buttonSurface.blit(self.buttonSurf, [
-                self.buttonRect.width / 2 - self.buttonSurf.get_rect().width / 2,
-                self.buttonRect.height / 2 - self.buttonSurf.get_rect().height / 2
+            textSurface = font.render(self.text, True, colour)
+            p.draw.rect(screen, (255, 255, 255), p.Rect(self.x, self.y, self.width, self.height), 0, 15)
+            p.draw.rect(screen, colour, p.Rect(self.x, self.y, self.width, self.height), 5, 15)
+            screen.blit(textSurface, [
+                self.x + self.buttonRect.width / 2 - textSurface.get_rect().width / 2,
+                self.y + self.buttonRect.height / 2 - textSurface.height / 2
             ])
-            screen.blit(self.buttonSurface, self.buttonRect)
 
 class AmountSlider:
     def __init__(self, x, y, width, height, amount, bean, iteration):
@@ -212,7 +214,7 @@ class AmountSlider:
             if self.sliderRect.collidepoint(mouse_pos):
                 if p.mouse.get_pressed(num_buttons=3)[0]:
                     self.pressed = True
-                    if self.iteration == _BEANS[len(_BEANS)-1]:
+                    if self.amount == _BEANS[len(_BEANS)-1]:
                         play_sound_effect('assets/big_beans_gone.mp3')
                     else:
                         play_sound_effect('assets/box_open.mp3')
@@ -415,6 +417,7 @@ def deal():
 def no_deal():
     global _BEAN_OR_NO_BEAN
     _BEAN_OR_NO_BEAN = False
+    play_sound_effect("assets/deal.mp3")
     Bean("no_bean")
 
 def wizard_rings():
