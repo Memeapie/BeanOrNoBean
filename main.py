@@ -9,6 +9,7 @@ _LAST_WIZARD_CALL = 0
 _WIZARD_SUMMONED = False
 _BEAN_OR_NO_BEAN = False
 _GAME_STATE = 'HOLD'
+_BEAN_ACCEPTED = False
 
 import pygame as p
 from pygame import mixer as m
@@ -62,11 +63,24 @@ class BeanBox:
         self.x = x - (width / 2)
         self.y = y - (height / 2)
         self.image = p.transform.scale(p.image.load('assets/Logo-Large.png'), (width, height)).convert_alpha()
+        self.animationTimer = 0
 
         _OBJECTS.append(self)
 
     def process(self):
-        screen.blit(self.image, (self.x, self.y))
+        if not self.animationTimer == 255:
+            self.animationTimer += 1
+
+        if not _BEAN_OR_NO_BEAN and not _WIZARD_SUMMONED:
+            alpha = self.animationTimer
+            if alpha <= 0: alpha = 0
+            self.image.set_alpha(alpha)
+            screen.blit(self.image, (self.x, self.y))
+
+        if _BEAN_OR_NO_BEAN and not _WIZARD_SUMMONED:
+            self.animationTimer = -500
+            self.image.set_alpha(255)
+            screen.blit(self.image, (self.x, self.y))
 
 class Background:
     def __init__(self):
@@ -324,6 +338,32 @@ class Bean:
         if self.animationTimer == 0:
             _OBJECTS.remove(self)
 
+class BeanWizard:
+    def __init__(self):
+        self.image = p.image.load("assets/bean_wizard_"+ str(rnd.randint(0,3)) + ".png").convert_alpha()
+        self.fog = p.image.load("assets/fog.png").convert_alpha()
+        self.pos = [(screen.get_width() / 2) - (self.image.get_width() / 2), (screen.get_height() / 2) - (self.image.get_height() / 2)]
+        self.animationTimer = 0
+        self.fogAnimationTimer = 255
+
+        _OBJECTS.append(self)
+
+    def process(self):
+        self.animationTimer += 1
+        alpha = self.animationTimer
+        if self.animationTimer > 250:
+            alpha = 250 - (self.animationTimer - 250)
+            self.fogAnimationTimer -= 1
+        if self.animationTimer >= 500:
+            _OBJECTS.remove(self)
+
+        self.image.set_alpha(alpha)
+        screen.blit(self.image, self.pos)
+
+        self.fog.set_alpha(self.fogAnimationTimer)
+        screen.blit(self.fog, ((self.animationTimer * 2) - self.fog.get_width(), screen.get_height() - self.fog.get_height()))
+        screen.blit(p.transform.flip(self.fog, True, False), (screen.get_width() - (self.animationTimer * 2), screen.get_height() - self.fog.get_height()))
+
 def spawn_firework(pos_x, pos_y):
     Firework(pos=(pos_x, pos_y),
              colour=[rnd.uniform(0, 255), rnd.uniform(0, 255), rnd.uniform(0, 255)],
@@ -368,8 +408,9 @@ def play_sound_effect(sound_effect, loop = 0):
     m.music.play(loop)
 
 def deal():
-    global _BEAN_OR_NO_BEAN
+    global _BEAN_OR_NO_BEAN, _BEAN_ACCEPTED
     _BEAN_OR_NO_BEAN = False
+    _BEAN_ACCEPTED = True
     spawn_firework(screen.get_width() / 2, screen.get_height() / 2)
     spawn_firework(screen.get_width() / 4, (screen.get_width() / 4) * 3)
     spawn_firework((screen.get_width() / 4) * 3, (screen.get_width() / 4) * 3)
@@ -383,12 +424,14 @@ def no_deal():
 
 def wizard_rings():
     global _BEANS_REMOVED, _LAST_WIZARD_CALL, _DECISION_MUSIC_COOLDOWN, _WIZARD_SUMMONED, _BEAN_OR_NO_BEAN
-    if not _BEANS_REMOVED == _LAST_WIZARD_CALL:
+    if not(_BEANS_REMOVED == _LAST_WIZARD_CALL) and not _BEAN_ACCEPTED:
         if (_BEANS_REMOVED % 3 == 0) and (_DECISION_MUSIC_COOLDOWN < 50):
+            print(_BEAN_ACCEPTED)
             _LAST_WIZARD_CALL = _BEANS_REMOVED
             play_sound_effect('assets/phone_ring.mp3')
             m.music.set_volume(1)
             _WIZARD_SUMMONED = True
+            BeanWizard()
 
     if _WIZARD_SUMMONED and not m.music.get_busy():
         play_sound_effect('assets/bean_wizard.mp3', -1)
