@@ -140,19 +140,18 @@ class ParticleEmitter:
         self.particles = particle_copy
 
 class Button:
-    def __init__(self, x, y, width, height, button_text='Button', onclick_function=None, one_press=False):
+    def __init__(self, x, y, width, height, button_text='Button', onclick_function=None):
         self.x = x
         self.y = y
         self.width = width
         self.height = height
         self.onclickFunction = onclick_function
-        self.onePress = one_press
-        self.alreadyPressed = False
+        self.pressed = False
 
         self.fillColors = {
-            'normal': '#5adbb5',
-            'hover': '#5dbea3',
-            'pressed': '#33b249',
+            'normal': '#b90e0a',
+            'hover': '#990f02',
+            'pressed': '#610c04',
         }
 
         self.buttonSurface = p.Surface((self.width, self.height))
@@ -168,13 +167,9 @@ class Button:
             self.buttonSurface.fill(self.fillColors['hover'])
             if p.mouse.get_pressed(num_buttons=3)[0]:
                 self.buttonSurface.fill(self.fillColors['pressed'])
-                if self.onePress:
+                if not self.pressed:
                     self.onclickFunction()
-                elif not self.alreadyPressed:
-                    self.onclickFunction()
-                    self.alreadyPressed = True
-            else:
-                self.alreadyPressed = False
+                    self.pressed = True
 
         if (_GAME_STATE == 'HOLD') or _BEAN_OR_NO_BEAN:
             self.buttonSurface.blit(self.buttonSurf, [
@@ -426,7 +421,6 @@ def wizard_rings():
     global _BEANS_REMOVED, _LAST_WIZARD_CALL, _DECISION_MUSIC_COOLDOWN, _WIZARD_SUMMONED, _BEAN_OR_NO_BEAN
     if not(_BEANS_REMOVED == _LAST_WIZARD_CALL) and not _BEAN_ACCEPTED:
         if (_BEANS_REMOVED % 3 == 0) and (_DECISION_MUSIC_COOLDOWN < 50):
-            print(_BEAN_ACCEPTED)
             _LAST_WIZARD_CALL = _BEANS_REMOVED
             play_sound_effect('assets/phone_ring.mp3')
             m.music.set_volume(1)
