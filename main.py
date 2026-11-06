@@ -404,10 +404,21 @@ def play_sound_effect(sound_effect, loop = 0):
     m.music.set_volume(1)
     m.music.play(loop)
 
+def remove_decision_buttons():
+    for obj in list(_OBJECTS):
+        if isinstance(obj, Button) and obj.text in ('BEAN', 'NO BEAN'):
+            _OBJECTS.remove(obj)
+
+def spawn_decision_buttons():
+    remove_decision_buttons()
+    Button(screen.get_width() / 2 - 300, screen.get_height() / 4, 200, 100, 'BEAN', deal)
+    Button(screen.get_width() / 2 + 100, screen.get_height() / 4, 200, 100, 'NO BEAN', no_deal)
+
 def deal():
     global _BEAN_OR_NO_BEAN, _BEAN_ACCEPTED
     _BEAN_OR_NO_BEAN = False
     _BEAN_ACCEPTED = True
+    remove_decision_buttons()
     spawn_firework(screen.get_width() / 2, screen.get_height() / 2)
     spawn_firework(screen.get_width() / 4, (screen.get_width() / 4) * 3)
     spawn_firework((screen.get_width() / 4) * 3, (screen.get_width() / 4) * 3)
@@ -417,6 +428,7 @@ def deal():
 def no_deal():
     global _BEAN_OR_NO_BEAN
     _BEAN_OR_NO_BEAN = False
+    remove_decision_buttons()
     play_sound_effect("assets/deal.mp3")
     Bean("no_bean")
 
@@ -436,6 +448,7 @@ def wizard_rings():
         _WIZARD_SUMMONED = False
         _BEAN_OR_NO_BEAN = True
         _DECISION_MUSIC_COOLDOWN = 400
+        spawn_decision_buttons()
 
 def init_bean():
     global _GAME_STATE
@@ -454,9 +467,6 @@ def init_bean():
     while not (beanCounter == _NO_BEANS):
         AmountSlider(0, sliderOffset + (beanCounter * 100), 375, 87, "NO", "blue", beanCounter)
         beanCounter += 1
-
-    Button(screen.get_width() / 2 - 300, screen.get_height() / 4, 200, 100, 'BEAN', deal)
-    Button(screen.get_width() / 2 + 100, screen.get_height() / 4, 200, 100, 'NO BEAN', no_deal)
 
     play_sound_effect('assets/ambience.mp3', -1)
     _GAME_STATE = 'BEAN'
@@ -481,7 +491,7 @@ def game_loop(
         background.process()
         particles.process()
 
-        for object in _OBJECTS:
+        for object in list(_OBJECTS):
             object.process()
 
         if _GAME_STATE == 'BEAN':
